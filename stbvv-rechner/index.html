@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StBVV Honorar- und Angebotsrechner</title>
+<style>
+  :root{
+    --bg:#f4f5f7; --panel:#ffffff; --border:#d9dce1; --text:#1f2328; --muted:#5b6370;
+    --accent:#0f4c81; --accent-light:#e8f0f8; --warn-bg:#fff6e0; --warn-border:#e8c468;
+    --danger:#b3261e; --good:#1c7a3b; --mono:'SF Mono',Consolas,Menlo,monospace;
+    --radius:8px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#15181c; --panel:#1e2228; --border:#343a42; --text:#e7e9ec; --muted:#9aa3ad;
+      --accent:#5b9bd5; --accent-light:#223648; --warn-bg:#3a2f12; --warn-border:#6b5620;
+      --danger:#ff6b61; --good:#4cc277;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#15181c; --panel:#1e2228; --border:#343a42; --text:#e7e9ec; --muted:#9aa3ad;
+    --accent:#5b9bd5; --accent-light:#223648; --warn-bg:#3a2f12; --warn-border:#6b5620;
+    --danger:#ff6b61; --good:#4cc277;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:14px;}
+  .wrap{max-width:1180px;margin:0 auto;padding:16px;}
+  header.top{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  header.top h1{font-size:19px;margin:0;}
+  header.top .sub{color:var(--muted);font-size:12px;}
+  .tabs{display:flex;gap:4px;margin:14px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+  .tab-btn{background:none;border:none;padding:9px 14px;cursor:pointer;color:var(--muted);font-size:13.5px;border-bottom:2px solid transparent;font-weight:600;}
+  .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:14px;}
+  .panel h2{font-size:14px;margin:0 0 10px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);}
+  .notice{background:var(--warn-bg);border:1px solid var(--warn-border);border-radius:var(--radius);padding:10px 14px;font-size:12.5px;line-height:1.5;margin-bottom:14px;color:var(--text);}
+  .notice b{color:var(--text);}
+  .notice button{float:right;background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;}
+  .grid{display:grid;gap:10px;}
+  .grid.cols2{grid-template-columns:1fr 1fr;}
+  .grid.cols3{grid-template-columns:1fr 1fr 1fr;}
+  @media (max-width:720px){.grid.cols2,.grid.cols3{grid-template-columns:1fr;}}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:3px;font-weight:600;}
+  input[type=text],input[type=number],input[type=date],select,textarea{
+    width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:13.5px;font-family:inherit;
+  }
+  textarea{font-family:var(--mono);font-size:12.5px;min-height:140px;resize:vertical;}
+  .field{margin-bottom:10px;}
+  .btn{background:var(--accent);color:#fff;border:none;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;}
+  .btn.secondary{background:var(--panel);color:var(--text);border:1px solid var(--border);}
+  .btn.danger{background:none;color:var(--danger);border:1px solid var(--danger);}
+  .btn.small{padding:4px 9px;font-size:12px;}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--border);vertical-align:top;}
+  th{color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.02em;}
+  tr:last-child td{border-bottom:none;}
+  .right{text-align:right;}
+  .num{font-family:var(--mono);}
+  .muted{color:var(--muted);}
+  .badge{display:inline-block;font-size:10.5px;padding:1px 6px;border-radius:10px;border:1px solid var(--border);color:var(--muted);margin-left:5px;}
+  .badge.warn{border-color:var(--warn-border);color:#9a6b00;background:var(--warn-bg);}
+  :root[data-theme="dark"] .badge.warn, @media (prefers-color-scheme:dark){.badge.warn{color:#e3b24d;}}
+  .badge.ok{border-color:var(--good);color:var(--good);}
+  .slider-row{display:flex;align-items:center;gap:10px;}
+  .slider-row input[type=range]{flex:1;}
+  .slider-row .val{width:64px;text-align:right;font-family:var(--mono);font-weight:700;}
+  .add-form{border:1px dashed var(--border);border-radius:var(--radius);padding:14px;margin-top:10px;}
+  .pos-note{font-size:11px;color:var(--muted);margin-top:2px;}
+  .totals-table td{padding:6px 8px;}
+  .totals-table tr.grand td{font-weight:700;font-size:15px;border-top:2px solid var(--border);padding-top:10px;}
+  .icon-btn{background:none;border:none;color:var(--danger);cursor:pointer;font-size:15px;line-height:1;padding:2px 6px;}
+  select optgroup{font-weight:700;}
+  footer{text-align:center;color:var(--muted);font-size:11.5px;margin:30px 0 10px;}
+  .doc-header{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+  .doc-header textarea{min-height:70px;font-family:inherit;font-size:13px;}
+  .title-toggle{display:flex;gap:6px;}
+  .title-toggle button{flex:1;}
+  .title-toggle button.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+  @media print{
+    body{background:#fff;}
+    .no-print{display:none !important;}
+    .panel{border:none;padding:0;margin-bottom:10px;}
+    .wrap{max-width:100%;}
+  }
+  .flex-between{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
+  code{font-family:var(--mono);background:var(--accent-light);padding:1px 4px;border-radius:4px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top no-print">
+    <div>
+      <h1>StBVV Honorar- &amp; Angebotsrechner</h1>
+      <div class="sub">Steuerberatervergütungsverordnung · Wert- und Zeitgebühren, Angebot/Rechnung, editierbare Tabellen</div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn secondary small" id="btnTheme" title="Theme umschalten">🌓 Theme</button>
+      <button class="btn secondary small" id="btnReset" title="Alles zurücksetzen">↺ Zurücksetzen</button>
+    </div>
+  </header>
+
+  <div class="notice no-print" id="dataNotice">
+    <button onclick="document.getElementById('dataNotice').style.display='none'">✕</button>
+    <b>Hinweis zu den Tabellenwerten:</b> Die hinterlegten Gebührentabellen (A/B/C) und Zehntelsatz-Rahmen wurden am 09.10.2026 aus frei zugänglichen Sekundärquellen zusammengestellt (u.&nbsp;a. NWB Gesetze, buzer.de, lexmea.de, BStBK), weil der direkte Zugriff auf den amtlichen Verordnungstext (gesetze-im-internet.de / Bundesgesetzblatt) in dieser Sitzung technisch nicht möglich war. Die Werte beziehen sich auf den Stand nach der Fünften Verordnung zur Änderung der StBVV (in Kraft seit 1.&nbsp;Juli 2025). Einzelne Zwischenwerte der Tabellen sowie als <span class="badge warn">ungeprüft</span> markierte Gebührenrahmen sind nicht am Originaltext verifiziert. <b>Bitte vor produktivem Einsatz im Tab „Tabellen &amp; Sätze“ gegen die aktuelle amtliche Fassung prüfen und ggf. korrigieren</b> — alle Werte sind dort direkt editierbar.
+  </div>
+
+  <div class="tabs no-print">
+    <button class="tab-btn active" data-tab="angebot">Angebot / Positionen</button>
+    <button class="tab-btn" data-tab="doc">Dokument &amp; Druck</button>
+    <button class="tab-btn" data-tab="tables">Tabellen &amp; Sätze</button>
+    <button class="tab-btn" data-tab="info">Hinweise</button>
+  </div>
+
+  <!-- ========== TAB: ANGEBOT / POSITIONEN ========== -->
+  <div class="tab-panel active" id="tab-angebot">
+
+    <div class="panel no-print">
+      <h2>Position hinzufügen</h2>
+      <div class="field">
+        <label>Leistung</label>
+        <select id="selLeistung"></select>
+      </div>
+      <div id="formArea"></div>
+    </div>
+
+    <div class="panel">
+      <div class="flex-between">
+        <h2 style="margin:0;">Positionen</h2>
+        <span class="muted" id="posCount"></span>
+      </div>
+      <table id="posTable">
+        <thead>
+          <tr>
+            <th>Leistung</th>
+            <th>Berechnungsgrundlage</th>
+            <th class="right">Satz</th>
+            <th class="right">Menge</th>
+            <th class="right">Betrag</th>
+            <th class="no-print"></th>
+          </tr>
+        </thead>
+        <tbody id="posBody"></tbody>
+      </table>
+      <p class="muted" id="emptyMsg" style="display:none;">Noch keine Positionen. Oben eine Leistung auswählen und hinzufügen.</p>
+    </div>
+
+    <div class="panel">
+      <h2>Zuschläge &amp; Summe</h2>
+      <div class="grid cols3 no-print">
+        <div class="field">
+          <label><input type="checkbox" id="chkMehrfach" style="width:auto;margin-right:6px;"> Zuschlag mehrere Auftraggeber (vereinfacht)</label>
+          <input type="number" id="pctMehrfach" value="30" step="1" style="margin-top:4px;" disabled>
+          <div class="pos-note">% Zuschlag auf die Zwischensumme je weiterem Auftraggeber (Analogie, im Original einzelfallabhängig – <span class="badge warn">ungeprüft</span>)</div>
+        </div>
+        <div class="field">
+          <label><input type="checkbox" id="chkAuslagen" style="width:auto;margin-right:6px;" checked> Auslagenpauschale (§16 StBVV)</label>
+          <div class="pos-note">20&nbsp;% der Gebühren, gedeckelt auf 20&nbsp;€ je Angelegenheit (hier: gesamtes Angebot)</div>
+        </div>
+        <div class="field">
+          <label><input type="checkbox" id="chkUst" style="width:auto;margin-right:6px;" checked> Umsatzsteuer</label>
+          <input type="number" id="ustSatz" value="19" step="1" style="margin-top:4px;">
+          <div class="pos-note">% USt auf Gebühren + Auslagen</div>
+        </div>
+      </div>
+      <table class="totals-table" style="margin-top:8px;">
+        <tr><td>Zwischensumme Gebühren</td><td class="right num" id="sumGebuehren">0,00 €</td></tr>
+        <tr id="rowMehrfach" style="display:none;"><td>+ Zuschlag mehrere Auftraggeber</td><td class="right num" id="sumMehrfach">0,00 €</td></tr>
+        <tr id="rowAuslagen"><td>+ Auslagenpauschale §16</td><td class="right num" id="sumAuslagen">0,00 €</td></tr>
+        <tr><td>Netto gesamt</td><td class="right num" id="sumNetto">0,00 €</td></tr>
+        <tr id="rowUst"><td>+ Umsatzsteuer</td><td class="right num" id="sumUst">0,00 €</td></tr>
+        <tr class="grand"><td>Gesamtbetrag</td><td class="right num" id="sumGesamt">0,00 €</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ========== TAB: DOKUMENT & DRUCK ========== -->
+  <div class="tab-panel" id="tab-doc">
+    <div class="panel no-print">
+      <h2>Dokument-Einstellungen</h2>
+      <div class="title-toggle field">
+        <button class="btn secondary active" data-doctype="Angebot">Angebot</button>
+        <button class="btn secondary" data-doctype="Honorarrechnung">Honorarrechnung</button>
+        <button class="btn secondary" data-doctype="Kostenvoranschlag">Kostenvoranschlag</button>
+      </div>
+      <div class="doc-header">
+        <div>
+          <div class="field"><label>Kanzlei (Name, Anschrift)</label><textarea id="docKanzlei">jh+partner Steuerberatungsgesellschaft
+Musterstraße 1
+12345 Musterstadt</textarea></div>
+        </div>
+        <div>
+          <div class="field"><label>Mandant (Name, Anschrift)</label><textarea id="docMandant">Mandant GmbH
+Beispielweg 2
+54321 Beispielort</textarea></div>
+        </div>
+      </div>
+      <div class="grid cols3">
+        <div class="field"><label>Nummer</label><input type="text" id="docNummer" value="A-2026-001"></div>
+        <div class="field"><label>Datum</label><input type="date" id="docDatum"></div>
+        <div class="field"><label>Gültig bis / Fälligkeit</label><input type="date" id="docGueltig"></div>
+      </div>
+      <div class="field"><label>Betreff / Bemerkung</label><textarea id="docBetreff" style="min-height:50px;">Steuerliche Beratungs- und Erklärungsleistungen</textarea></div>
+      <button class="btn" onclick="window.print()">🖨 Drucken / Als PDF speichern</button>
+    </div>
+
+    <div class="panel" id="printPreview">
+      <!-- gerendert via JS -->
+    </div>
+  </div>
+
+  <!-- ========== TAB: TABELLEN & SÄTZE ========== -->
+  <div class="tab-panel" id="tab-tables">
+    <div class="panel no-print">
+      <h2>Tabellenwerte bearbeiten</h2>
+      <p class="muted" style="margin-top:0;">Format pro Zeile: <code>Gegenstandswert;volle Gebühr</code>. Werte korrigieren und „Übernehmen“ klicken. „Zurücksetzen“ stellt die Ausgangswerte dieser Sitzung wieder her.</p>
+      <div class="grid cols3" id="tableEditors"></div>
+    </div>
+    <div class="panel no-print">
+      <h2>Weitere Parameter</h2>
+      <div class="grid cols3">
+        <div class="field"><label>Zeitgebühr min (€/Std.)</label><input type="number" id="parZeitMin" value="66"></div>
+        <div class="field"><label>Zeitgebühr max (€/Std.)</label><input type="number" id="parZeitMax" value="164"></div>
+        <div class="field"><label>Allgemeiner Mindestgegenstandswert (€)</label><input type="number" id="parMindestGW" value="8000"></div>
+      </div>
+      <button class="btn small" id="btnApplyParams">Übernehmen</button>
+    </div>
+    <div class="panel">
+      <h2>Verwendete Leistungstatbestände (Kurzübersicht)</h2>
+      <table>
+        <thead><tr><th>Leistung</th><th>Vorschrift</th><th>Tabelle</th><th>Rahmen</th><th>Status</th></tr></thead>
+        <tbody id="catalogBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ========== TAB: INFO ========== -->
+  <div class="tab-panel" id="tab-info">
+    <div class="panel">
+      <h2>Was dieser Rechner tut</h2>
+      <p>Der Rechner ermittelt Gebühren nach der StBVV auf Basis von Gegenstandswert-Tabellen (Tabelle A – Beratungstabelle, Tabelle B – Abschlusstabelle, Tabelle C – Buchführungstabelle) und den jeweils einschlägigen Zehntelsatz-Rahmen, außerdem Zeitgebühren (§13), feste Beträge je Arbeitnehmer bei der Lohnbuchführung (§34) und freie Positionen. Zwischenwerte innerhalb einer Tabelle werden linear interpoliert und auf volle Euro gerundet; das entspricht der in der StBVV vorgesehenen Methode für Wertgebühren.</p>
+      <p><b>Nicht enthalten:</b> die landwirtschaftliche Tabelle D, die detaillierte RVG-Gebührentabelle für Einspruchs-/Klageverfahren (hier nur vereinfachtes manuelles Eingabefeld) sowie sämtliche Sonderfälle der StBVV (z.&nbsp;B. Organschaften, besondere Schwellenwerte, Übergangsrecht für Altfälle vor dem 1.7.2025).</p>
+      <h2>Quellen (Sekundärquellen, Stand der Recherche 09.10.2026)</h2>
+      <ul>
+        <li>NWB Gesetze – StBVV Tabelle A/B/C, §§ 24, 33, 34, 40</li>
+        <li>buzer.de – Anlagen 1–4 StBVV</li>
+        <li>lexmea.de – Anlage 1–3 StBVV (Fundstelle BGBl. 2025 I Nr. 105)</li>
+        <li>Bundessteuerberaterkammer (BStBK) – Leitfaden Honorarmanagement, Stand Juni 2025</li>
+        <li>Diverse Kanzlei-/Kammerseiten zu Zeitgebühr und Lohnbuchführung (§13, §34)</li>
+      </ul>
+      <p class="muted">Diese App ersetzt keine rechtliche Prüfung im Einzelfall und keine Abstimmung mit dem amtlichen Verordnungstext. Alle berechneten Beträge sind Nettobeträge vor USt, soweit nicht anders ausgewiesen.</p>
+    </div>
+  </div>
+
+  <footer class="no-print">StBVV-Rechner · lokal im Browser, keine Datenübertragung · Positionen werden im Browser (localStorage) zwischengespeichert</footer>
+</div>
+
+<script>
+/* ===================== DATEN: TABELLEN ===================== */
+const DEFAULT_TABLES = {
+  A: {
+    label: "Tabelle A – Beratungstabelle",
+    points: [[300,31],[600,56],[900,81],[1500,130],[2000,166],[3000,235],[5000,375],[10000,605],[50000,1304],[200000,2264],[600000,3404]]
+  },
+  B: {
+    label: "Tabelle B – Abschlusstabelle",
+    points: [[3000,49],[10000,127],[25000,201],[50000,263],[100000,369],[250000,613],[300000,641],[500000,832],[1000000,1126],[5000000,2328]]
+  },
+  C: {
+    label: "Tabelle C – Buchführungstabelle",
+    points: [[15000,72],[25000,101],[50000,138],[100000,188],[200000,275],[500000,512]]
+  }
+};
+
+let TABLES = JSON.parse(JSON.stringify(DEFAULT_TABLES));
+let PARAMS = { zeitMin:66, zeitMax:164, mindestGW:8000 };
+
+function tableLookup(tableKey, wert){
+  const pts = TABLES[tableKey].points.slice().sort((a,b)=>a[0]-b[0]);
+  if (wert <= pts[0][0]) return {value: pts[0][1], outOfRange: wert < pts[0][0]};
+  if (wert >= pts[pts.length-1][0]) return {value: pts[pts.length-1][1], outOfRange: wert > pts[pts.length-1][0]};
+  for (let i=0;i<pts.length-1;i++){
+    const [w1,g1]=pts[i], [w2,g2]=pts[i+1];
+    if (wert>=w1 && wert<=w2){
+      const g = g1 + (g2-g1)*(wert-w1)/(w2-w1);
+      return {value: Math.round(g), outOfRange:false};
+    }
+  }
+  return {value: pts[pts.length-1][1], outOfRange:true};
+}
+
+/* ===================== KATALOG DER LEISTUNGEN ===================== */
+// kind: 'table' (Gegenstandswert -> Tabelle -> Zehntelsatz) | 'tablemean2' (zwei Werte, Mittel) |
+//       'perEmployee' (fester €-Betrag je Arbeitnehmer) | 'time' (Zeitgebühr) |
+//       'fixedcap' (Höchstbetrag) | 'manual' (freier Betrag)
+const CATALOG = [
+  {id:'beratung_rat', group:'Beratung', bez:'Rat / Auskunft (§21 Abs.1 StBVV)', kind:'table', table:'A',
+    rahmen:[1,10], mittel:5.5, gwLabel:'Gegenstandswert (€)', mindestGW:8000, status:'ungeprüft'},
+  {id:'beratung_erst', group:'Beratung', bez:'Erstberatung Verbraucher (§21 Abs.1 S.3/4, Höchstbetrag)', kind:'fixedcap',
+    cap:190, status:'allgemein bekannt, ungeprüft'},
+
+  {id:'est', group:'Steuererklärungen', bez:'Einkommensteuererklärung (§24 Abs.1 Nr.1)', kind:'table', table:'A',
+    rahmen:[1,6], mittel:3.5, gwLabel:'Summe der positiven Einkünfte (€)', mindestGW:8000, status:'bestätigt'},
+  {id:'kst', group:'Steuererklärungen', bez:'Körperschaftsteuererklärung (§24 Abs.1 Nr.3)', kind:'table', table:'A',
+    rahmen:[2,8], mittel:5, gwLabel:'Einkommen vor Verlustabzug (€)', mindestGW:16000, status:'bestätigt'},
+  {id:'gewst', group:'Steuererklärungen', bez:'Gewerbesteuererklärung (§24 Abs.1 Nr.5)', kind:'table', table:'A',
+    rahmen:[1,6], mittel:3.5, gwLabel:'Gewerbeertrag vor Freibetrag (€)', mindestGW:8000, status:'bestätigt'},
+  {id:'gewst_zerleg', group:'Steuererklärungen', bez:'Gewerbesteuerzerlegungserklärung (§24 Abs.1 Nr.6)', kind:'table', table:'A',
+    rahmen:[1,6], mittel:3.5, gwLabel:'10 % der erklärten Arbeitslöhne (€)', mindestGW:4000, status:'bestätigt'},
+  {id:'ustva', group:'Steuererklärungen', bez:'Umsatzsteuer-Voranmeldung (§24 Abs.1 Nr.7), pro Anmeldung', kind:'table', table:'A',
+    rahmen:[1,6], mittel:3.5, gwLabel:'Umsatz des Voranmeldungszeitraums (€)', status:'ungeprüft'},
+  {id:'ustjahr', group:'Steuererklärungen', bez:'Umsatzsteuererklärung Jahr (§24 Abs.1 Nr.8)', kind:'table', table:'A',
+    rahmen:[1,8], mittel:4.5, gwLabel:'Jahresumsatz (€)', status:'bestätigt'},
+  {id:'feststellung', group:'Steuererklärungen', bez:'Gesonderte/einheitliche Feststellung (§24 Abs.1 Nr.11)', kind:'table', table:'A',
+    rahmen:[2,12], mittel:7, gwLabel:'Summe der festgestellten Einkünfte (€)', status:'ungeprüft'},
+  {id:'sonstige_erkl', group:'Steuererklärungen', bez:'Sonstige Steuererklärung (§24 Abs.1 Nr.26, Auffangtatbestand)', kind:'table', table:'A',
+    rahmen:[1,6], mittel:3.5, gwLabel:'Gegenstandswert (€)', mindestGW:8000, status:'bestätigt'},
+
+  {id:'eur', group:'Jahresabschluss / EÜR', bez:'Einnahmen-Überschuss-Rechnung (§25)', kind:'table', table:'B',
+    rahmen:[2,12], mittel:7, gwLabel:'Betriebseinnahmen bzw. Gewinn, höherer Wert (€)', status:'bestätigt (Rahmen), GW-Basis vereinfacht'},
+  {id:'jahresabschluss', group:'Jahresabschluss / EÜR', bez:'Jahresabschluss – Bilanz &amp; GuV (§35)', kind:'tablemean2', table:'B',
+    rahmen:[10,40], mittel:25, label1:'Bilanzsumme (€)', label2:'Betriebliche Jahresleistung (€)', status:'bestätigt'},
+  {id:'anhang', group:'Jahresabschluss / EÜR', bez:'Anhang zum Jahresabschluss (§35)', kind:'table', table:'B',
+    rahmen:[2,12], mittel:7, gwLabel:'Gegenstandswert wie Jahresabschluss (€)', status:'ungeprüft'},
+  {id:'lagebericht', group:'Jahresabschluss / EÜR', bez:'Lagebericht (§35)', kind:'table', table:'B',
+    rahmen:[3,20], mittel:11.5, gwLabel:'Gegenstandswert wie Jahresabschluss (€)', status:'ungeprüft'},
+
+  {id:'buchfuehrung', group:'Laufende Buchführung', bez:'Buchführung inkl. Kontieren (§33 Abs.1), pro Monat', kind:'table', table:'C',
+    rahmen:[2,12], mittel:7, gwLabel:'Jahresumsatz bzw. Jahresaufwand, höherer Wert (€)', monthly:true, status:'bestätigt'},
+  {id:'kontieren', group:'Laufende Buchführung', bez:'Nur Kontieren der Belege (§33 Abs.2), pro Monat', kind:'table', table:'C',
+    rahmen:[1,6], mittel:3.5, gwLabel:'Jahresumsatz bzw. Jahresaufwand (€)', monthly:true, status:'bestätigt'},
+  {id:'buchf_vorkontiert', group:'Laufende Buchführung', bez:'Buchführung nach vom Mandanten kontierten Belegen (§33 Abs.3), pro Monat', kind:'table', table:'C',
+    rahmen:[1,6], mittel:3.5, gwLabel:'Jahresumsatz bzw. Jahresaufwand (€)', monthly:true, status:'bestätigt'},
+  {id:'buchf_dv', group:'Laufende Buchführung', bez:'Buchführung nach DV-Eingaben des Mandanten (§33 Abs.4), pro Monat', kind:'table', table:'C',
+    rahmen:[0.5,5], tenths:20, mittel:2.75, gwLabel:'Jahresumsatz bzw. Jahresaufwand (€)', monthly:true, status:'bestätigt'},
+  {id:'ueberwachung', group:'Laufende Buchführung', bez:'Laufende Überwachung der Buchführung (§33 Abs.5), pro Monat', kind:'table', table:'C',
+    rahmen:[1,6], mittel:3.5, gwLabel:'Jahresumsatz bzw. Jahresaufwand (€)', monthly:true, status:'bestätigt'},
+
+  {id:'lohn_einrichtung', group:'Lohnbuchführung', bez:'Einmalige Einrichtung der Lohnkonten (§34 Abs.1), je Arbeitnehmer', kind:'perEmployee',
+    min:6, max:19, mittel:12.5, einmalig:true, status:'ungeprüft'},
+  {id:'lohn_voll', group:'Lohnbuchführung', bez:'Laufende Lohnbuchführung, volle Übernahme (§34 Abs.2), je AN/Monat', kind:'perEmployee',
+    min:6, max:30, mittel:18, status:'ungeprüft'},
+  {id:'lohn_belege', group:'Lohnbuchführung', bez:'Lohnbuchführung nach vom Mandanten kontierten Belegen (§34 Abs.3), je AN/Monat', kind:'perEmployee',
+    min:2.5, max:9.5, mittel:6, status:'ungeprüft'},
+  {id:'lohn_dv', group:'Lohnbuchführung', bez:'Lohnbuchführung nach DV-Eingaben des Mandanten (§34 Abs.4), je AN/Monat', kind:'perEmployee',
+    min:1.2, max:4.2, mittel:2.7, status:'ungeprüft'},
+
+  {id:'ap_einwendung', group:'Prüfung / Rechtsbehelf', bez:'Schriftliche Einwendungen gegen Prüfungsbericht (§29)', kind:'table', table:'A',
+    rahmen:[5,10], mittel:7.5, gwLabel:'Steuerliche Auswirkung / Mehrergebnis (€)', status:'bestätigt'},
+  {id:'ap_teilnahme', group:'Prüfung / Rechtsbehelf', bez:'Teilnahme an Außenprüfung (§29) – Zeitgebühr', kind:'time', status:'bestätigt (Verweis auf Zeitgebühr)'},
+  {id:'einspruch', group:'Prüfung / Rechtsbehelf', bez:'Einspruchs-/Rechtsbehelfsverfahren (seit 1.7.2020 nach RVG Nr. 2300 VV)', kind:'rvg',
+    status:'Hinweis: eigener RVG-Gebührenwert erforderlich, hier manuell'},
+
+  {id:'zeitgebuehr', group:'Sonstiges', bez:'Zeitgebühr (§13)', kind:'time', status:'bestätigt (Satzrahmen seit 1.7.2025)'},
+  {id:'frei', group:'Sonstiges', bez:'Freie Position / Pauschale', kind:'manual', status:'–'},
+];
+
+/* ===================== STATE ===================== */
+let positions = [];
+let docType = 'Angebot';
+
+function statusBadge(status){
+  if (!status) return '';
+  const cls = status.includes('bestätigt') ? 'ok' : 'warn';
+  return `<span class="badge ${cls}">${status}</span>`;
+}
+
+function fmtEUR(n){
+  return (Math.round(n*100)/100).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' €';
+}
+function fmtNum(n, d=1){
+  return n.toLocaleString('de-DE',{minimumFractionDigits:0,maximumFractionDigits:d});
+}
+function fmtDe(n, d=2){
+  return n.toLocaleString('de-DE',{minimumFractionDigits:d,maximumFractionDigits:d});
+}
+
+/* ===================== LEISTUNG-AUSWAHL + FORMULAR ===================== */
+const selLeistung = document.getElementById('selLeistung');
+const groups = {};
+CATALOG.forEach(item=>{
+  groups[item.group] = groups[item.group] || [];
+  groups[item.group].push(item);
+});
+Object.keys(groups).forEach(g=>{
+  const og = document.createElement('optgroup'); og.label = g;
+  groups[g].forEach(item=>{
+    const opt = document.createElement('option'); opt.value = item.id; opt.textContent = item.bez.replace(/<[^>]+>/g,'');
+    og.appendChild(opt);
+  });
+  selLeistung.appendChild(og);
+});
+
+function renderForm(){
+  const item = CATALOG.find(i=>i.id===selLeistung.value);
+  const area = document.getElementById('formArea');
+  let html = `<div class="add-form">`;
+  html += `<div style="margin-bottom:8px;">${statusBadge(item.status)}</div>`;
+
+  if (item.kind==='table' || item.kind==='tablemean2'){
+    if (item.kind==='table'){
+      html += `<div class="field"><label>${item.gwLabel}</label><input type="number" id="in_gw" min="0" step="100" value="${item.mindestGW||0}"></div>`;
+    } else {
+      html += `<div class="grid cols2">
+        <div class="field"><label>${item.label1}</label><input type="number" id="in_gw1" min="0" step="100" value="0"></div>
+        <div class="field"><label>${item.label2}</label><input type="number" id="in_gw2" min="0" step="100" value="0"></div>
+      </div>`;
+    }
+    const tenths = item.tenths || 10;
+    html += `<div class="field"><label>Satz (${item.rahmen[0]}/${tenths} – ${item.rahmen[1]}/${tenths} einer vollen Gebühr nach ${TABLES[item.table].label})</label>
+      <div class="slider-row">
+        <input type="range" id="in_satz" min="${item.rahmen[0]}" max="${item.rahmen[1]}" step="0.1" value="${item.mittel}">
+        <span class="val" id="in_satz_val">${item.mittel}/${tenths}</span>
+      </div></div>`;
+    if (item.monthly){
+      html += `<div class="field" style="max-width:160px;"><label>Anzahl Monate</label><input type="number" id="in_monate" min="1" step="1" value="1"></div>`;
+    }
+  } else if (item.kind==='perEmployee'){
+    html += `<div class="grid cols2">
+      <div class="field"><label>Anzahl Arbeitnehmer</label><input type="number" id="in_an" min="1" step="1" value="1"></div>
+      ${item.einmalig ? '' : '<div class="field"><label>Anzahl Monate</label><input type="number" id="in_monate" min="1" step="1" value="1"></div>'}
+    </div>
+    <div class="field"><label>Betrag je Arbeitnehmer (${fmtDe(item.min)} – ${fmtDe(item.max)} €)</label>
+      <div class="slider-row">
+        <input type="range" id="in_satz" min="${item.min}" max="${item.max}" step="0.1" value="${item.mittel}">
+        <span class="val" id="in_satz_val">${fmtDe(item.mittel)} €</span>
+      </div></div>`;
+  } else if (item.kind==='time'){
+    html += `<div class="grid cols2">
+      <div class="field"><label>Stunden</label><input type="number" id="in_stunden" min="0" step="0.25" value="1"></div>
+      <div class="field"><label>Stundensatz (€, Rahmen ${PARAMS.zeitMin}–${PARAMS.zeitMax})</label>
+        <input type="number" id="in_satzAbs" min="${PARAMS.zeitMin}" max="${PARAMS.zeitMax}" step="0.5" value="${Math.round((PARAMS.zeitMin+PARAMS.zeitMax)/2)}"></div>
+    </div>`;
+  } else if (item.kind==='fixedcap'){
+    html += `<div class="field"><label>Betrag (max. ${item.cap} €)</label><input type="number" id="in_betrag" min="0" max="${item.cap}" step="1" value="${item.cap}"></div>`;
+  } else if (item.kind==='rvg'){
+    html += `<p class="muted" style="margin-top:0;">Seit 1.7.2020 richtet sich die Vergütung für außergerichtliche Rechtsbehelfe und das finanzgerichtliche Verfahren nach dem RVG (Geschäftsgebühr Nr. 2300 VV RVG, Rahmen 0,5–2,5, Mittelgebühr ca. 1,3). Die RVG-Tabellenwerte sind in diesem Rechner nicht hinterlegt – bitte den Tabellenwert nach Streitwert selbst nachschlagen und hier eintragen.</p>
+    <div class="grid cols2">
+      <div class="field"><label>RVG-Tabellenwert für den Streitwert (€)</label><input type="number" id="in_rvgwert" min="0" step="1" value="0"></div>
+      <div class="field"><label>Gebührensatz (0,5 – 2,5)</label>
+        <div class="slider-row"><input type="range" id="in_satz" min="0.5" max="2.5" step="0.1" value="1.3"><span class="val" id="in_satz_val">1,3</span></div>
+      </div>
+    </div>`;
+  } else if (item.kind==='manual'){
+    html += `<div class="grid cols2">
+      <div class="field"><label>Bezeichnung</label><input type="text" id="in_bez" value="Pauschale"></div>
+      <div class="field"><label>Betrag (€)</label><input type="number" id="in_betrag" min="0" step="1" value="0"></div>
+    </div>`;
+  }
+
+  html += `<div style="margin-top:10px;"><button class="btn" id="btnAddPos">+ Position hinzufügen</button></div>`;
+  html += `</div>`;
+  area.innerHTML = html;
+
+  const slider = document.getElementById('in_satz');
+  if (slider){
+    const valSpan = document.getElementById('in_satz_val');
+    slider.addEventListener('input', ()=>{
+      if (item.kind==='perEmployee') valSpan.textContent = fmtDe(parseFloat(slider.value))+' €';
+      else if (item.kind==='rvg') valSpan.textContent = fmtDe(parseFloat(slider.value),1);
+      else valSpan.textContent = fmtDe(parseFloat(slider.value),1)+'/'+(item.tenths||10);
+    });
+  }
+  document.getElementById('btnAddPos').addEventListener('click', ()=>addPosition(item));
+}
+selLeistung.addEventListener('change', renderForm);
+
+/* ===================== POSITION HINZUFÜGEN / BERECHNEN ===================== */
+function computePosition(item, inputs){
+  let basisLabel = '', satzLabel = '', menge = 1, betrag = 0, note='';
+
+  if (item.kind==='table'){
+    let gw = parseFloat(inputs.gw)||0;
+    if (item.mindestGW && gw < item.mindestGW){ gw = item.mindestGW; note = `auf Mindestgegenstandswert ${fmtEUR(item.mindestGW)} angehoben`; }
+    const lookup = tableLookup(item.table, gw);
+    const tenths = item.tenths || 10;
+    const satz = parseFloat(inputs.satz);
+    const monate = item.monthly ? (parseInt(inputs.monate)||1) : 1;
+    betrag = lookup.value * (satz/tenths) * monate;
+    basisLabel = `GW ${fmtEUR(gw)} → ${TABLES[item.table].label.split('–')[0].trim()} ${fmtEUR(lookup.value)}`;
+    satzLabel = `${satz}/${tenths}` + (item.monthly ? ` × ${monate} Mon.` : '');
+    menge = monate;
+    if (lookup.outOfRange) note += (note?'; ':'') + 'Gegenstandswert außerhalb hinterlegter Tabelle – Randwert verwendet';
+  }
+  else if (item.kind==='tablemean2'){
+    const gw1 = parseFloat(inputs.gw1)||0, gw2 = parseFloat(inputs.gw2)||0;
+    const gw = (gw1+gw2)/2;
+    const lookup = tableLookup(item.table, gw);
+    const satz = parseFloat(inputs.satz);
+    betrag = lookup.value * (satz/10);
+    basisLabel = `Mittel ${fmtEUR(gw)} (aus ${fmtEUR(gw1)} / ${fmtEUR(gw2)}) → ${fmtEUR(lookup.value)}`;
+    satzLabel = `${satz}/10`;
+    if (lookup.outOfRange) note = 'Gegenstandswert außerhalb hinterlegter Tabelle – Randwert verwendet';
+  }
+  else if (item.kind==='perEmployee'){
+    const an = parseInt(inputs.an)||0;
+    const satz = parseFloat(inputs.satz);
+    const monate = item.einmalig ? 1 : (parseInt(inputs.monate)||1);
+    betrag = an * satz * monate;
+    basisLabel = `${an} AN × ${fmtDe(satz)} €` + (item.einmalig?' (einmalig)':` × ${monate} Mon.`);
+    satzLabel = `${fmtDe(satz)} €/AN`;
+    menge = an*monate;
+  }
+  else if (item.kind==='time'){
+    const stunden = parseFloat(inputs.stunden)||0;
+    const satz = parseFloat(inputs.satzAbs)||0;
+    betrag = stunden*satz;
+    basisLabel = `${fmtNum(stunden,2)} Std. × ${fmtEUR(satz)}/Std.`;
+    satzLabel = `${fmtEUR(satz)}/Std.`;
+    menge = stunden;
+  }
+  else if (item.kind==='fixedcap'){
+    let b = parseFloat(inputs.betrag)||0;
+    if (b>item.cap){ b=item.cap; note = `auf Höchstbetrag ${fmtEUR(item.cap)} begrenzt`; }
+    betrag = b;
+    basisLabel = `Pauschale (max. ${fmtEUR(item.cap)})`;
+    satzLabel = '–';
+  }
+  else if (item.kind==='rvg'){
+    const rvgWert = parseFloat(inputs.rvgwert)||0;
+    const satz = parseFloat(inputs.satz)||0;
+    betrag = rvgWert*satz;
+    basisLabel = `RVG-Wert ${fmtEUR(rvgWert)}`;
+    satzLabel = `${fmtDe(satz,1)}-fach`;
+  }
+  else if (item.kind==='manual'){
+    betrag = parseFloat(inputs.betrag)||0;
+    basisLabel = '–';
+    satzLabel = '–';
+  }
+
+  return {basisLabel, satzLabel, menge, betrag, note};
+}
+
+function addPosition(item){
+  const inputs = {};
+  ['gw','gw1','gw2','satz','monate','an','stunden','satzAbs','betrag','rvgwert','bez'].forEach(k=>{
+    const el = document.getElementById('in_'+k);
+    if (el) inputs[k]=el.value;
+  });
+  const result = computePosition(item, inputs);
+  positions.push({
+    itemId: item.id,
+    bez: item.kind==='manual' ? (inputs.bez||'Pauschale') : item.bez.replace(/<[^>]+>/g,''),
+    status: item.status,
+    ...result
+  });
+  savePersist();
+  renderPositions();
+}
+
+function removePosition(idx){
+  positions.splice(idx,1);
+  savePersist();
+  renderPositions();
+}
+
+function renderPositions(){
+  const body = document.getElementById('posBody');
+  body.innerHTML='';
+  document.getElementById('emptyMsg').style.display = positions.length? 'none':'block';
+  document.getElementById('posCount').textContent = positions.length ? `${positions.length} Position(en)` : '';
+  positions.forEach((p,idx)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${p.bez}${p.note?`<div class="pos-note">⚠ ${p.note}</div>`:''}</td>
+      <td class="muted">${p.basisLabel}</td>
+      <td class="right num">${p.satzLabel}</td>
+      <td class="right num">${p.menge!==1 ? fmtNum(p.menge) : ''}</td>
+      <td class="right num">${fmtEUR(p.betrag)}</td>
+      <td class="no-print"><button class="icon-btn" onclick="removePosition(${idx})" title="Entfernen">✕</button></td>
+    `;
+    body.appendChild(tr);
+  });
+  renderTotals();
+  renderPrintPreview();
+}
+
+function renderTotals(){
+  const sumGebuehren = positions.reduce((s,p)=>s+p.betrag,0);
+  let total = sumGebuehren;
+
+  const chkMehrfach = document.getElementById('chkMehrfach').checked;
+  const pctMehrfach = parseFloat(document.getElementById('pctMehrfach').value)||0;
+  const mehrfachBetrag = chkMehrfach ? sumGebuehren*pctMehrfach/100 : 0;
+  document.getElementById('rowMehrfach').style.display = chkMehrfach? '' : 'none';
+  document.getElementById('sumMehrfach').textContent = fmtEUR(mehrfachBetrag);
+  total += mehrfachBetrag;
+
+  const chkAuslagen = document.getElementById('chkAuslagen').checked;
+  const auslagen = chkAuslagen ? Math.min(total*0.20, 20) : 0;
+  document.getElementById('rowAuslagen').style.display = chkAuslagen? '' : 'none';
+  document.getElementById('sumAuslagen').textContent = fmtEUR(auslagen);
+  total += auslagen;
+
+  const nettoGesamt = total;
+  const chkUst = document.getElementById('chkUst').checked;
+  const ustSatz = parseFloat(document.getElementById('ustSatz').value)||0;
+  const ust = chkUst ? nettoGesamt*ustSatz/100 : 0;
+  document.getElementById('rowUst').style.display = chkUst? '' : 'none';
+  document.getElementById('sumUst').textContent = fmtEUR(ust);
+
+  document.getElementById('sumGebuehren').textContent = fmtEUR(sumGebuehren);
+  document.getElementById('sumNetto').textContent = fmtEUR(nettoGesamt);
+  document.getElementById('sumGesamt').textContent = fmtEUR(nettoGesamt+ust);
+
+  return {sumGebuehren, mehrfachBetrag, auslagen, nettoGesamt, ust, gesamt: nettoGesamt+ust};
+}
+
+['chkMehrfach','pctMehrfach','chkAuslagen','chkUst','ustSatz'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', ()=>{ renderTotals(); renderPrintPreview(); savePersist(); });
+});
+document.getElementById('chkMehrfach').addEventListener('change', e=>{
+  document.getElementById('pctMehrfach').disabled = !e.target.checked;
+});
+
+/* ===================== DOKUMENT / DRUCK ===================== */
+document.querySelectorAll('[data-doctype]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('[data-doctype]').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    docType = btn.dataset.doctype;
+    renderPrintPreview();
+    savePersist();
+  });
+});
+['docKanzlei','docMandant','docNummer','docDatum','docGueltig','docBetreff'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', ()=>{ renderPrintPreview(); savePersist(); });
+});
+
+function renderPrintPreview(){
+  const t = renderTotals();
+  const kanzlei = document.getElementById('docKanzlei').value.replace(/\n/g,'<br>');
+  const mandant = document.getElementById('docMandant').value.replace(/\n/g,'<br>');
+  const nummer = document.getElementById('docNummer').value;
+  const datum = document.getElementById('docDatum').value;
+  const gueltig = document.getElementById('docGueltig').value;
+  const betreff = document.getElementById('docBetreff').value.replace(/\n/g,'<br>');
+
+  let rows = positions.map(p=>`
+    <tr>
+      <td>${p.bez}</td>
+      <td class="muted">${p.basisLabel}</td>
+      <td class="right num">${p.satzLabel}</td>
+      <td class="right num">${fmtEUR(p.betrag)}</td>
+    </tr>`).join('');
+  if (!rows) rows = `<tr><td colspan="4" class="muted">Keine Positionen erfasst.</td></tr>`;
+
+  document.getElementById('printPreview').innerHTML = `
+    <div style="display:flex;justify-content:space-between;margin-bottom:20px;">
+      <div>${kanzlei}</div>
+      <div style="text-align:right;">${mandant}</div>
+    </div>
+    <h2 style="font-size:20px;text-transform:none;color:var(--text);border-bottom:2px solid var(--accent);padding-bottom:6px;">${docType} Nr. ${nummer||'–'}</h2>
+    <p>Datum: ${datum||'–'} &nbsp;&nbsp; ${docType==='Honorarrechnung'?'Fällig':'Gültig bis'}: ${gueltig||'–'}</p>
+    <p>${betreff}</p>
+    <table style="margin-top:14px;">
+      <thead><tr><th>Leistung</th><th>Berechnungsgrundlage</th><th class="right">Satz</th><th class="right">Betrag</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <table class="totals-table" style="margin-top:14px;max-width:360px;margin-left:auto;">
+      <tr><td>Zwischensumme Gebühren</td><td class="right num">${fmtEUR(t.sumGebuehren)}</td></tr>
+      ${t.mehrfachBetrag? `<tr><td>Zuschlag mehrere Auftraggeber</td><td class="right num">${fmtEUR(t.mehrfachBetrag)}</td></tr>`:''}
+      ${t.auslagen? `<tr><td>Auslagenpauschale §16</td><td class="right num">${fmtEUR(t.auslagen)}</td></tr>`:''}
+      <tr><td>Netto gesamt</td><td class="right num">${fmtEUR(t.nettoGesamt)}</td></tr>
+      ${t.ust? `<tr><td>Umsatzsteuer</td><td class="right num">${fmtEUR(t.ust)}</td></tr>`:''}
+      <tr class="grand"><td>Gesamtbetrag</td><td class="right num">${fmtEUR(t.gesamt)}</td></tr>
+    </table>
+    <p class="muted" style="margin-top:24px;font-size:11px;">Alle Beträge gemäß Steuerberatervergütungsverordnung (StBVV). Diese Aufstellung ist unverbindlich und ersetzt keine Prüfung des Einzelfalls.</p>
+  `;
+}
+
+/* ===================== TABELLEN-TAB ===================== */
+function renderTableEditors(){
+  const wrap = document.getElementById('tableEditors');
+  wrap.innerHTML='';
+  Object.keys(TABLES).forEach(key=>{
+    const div = document.createElement('div');
+    const text = TABLES[key].points.map(p=>p.join(';')).join('\n');
+    div.innerHTML = `
+      <label>${TABLES[key].label}</label>
+      <textarea id="edit_${key}">${text}</textarea>
+      <div style="margin-top:6px;display:flex;gap:6px;">
+        <button class="btn small" onclick="applyTable('${key}')">Übernehmen</button>
+        <button class="btn secondary small" onclick="resetTable('${key}')">Zurücksetzen</button>
+      </div>
+    `;
+    wrap.appendChild(div);
+  });
+}
+function applyTable(key){
+  const raw = document.getElementById('edit_'+key).value;
+  const pts = raw.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>l.split(';').map(Number)).filter(p=>p.length===2 && !isNaN(p[0]) && !isNaN(p[1]));
+  if (pts.length<2){ alert('Mindestens zwei gültige Zeilen "Gegenstandswert;Gebühr" erforderlich.'); return; }
+  TABLES[key].points = pts;
+  savePersist();
+  renderPositions();
+  alert(TABLES[key].label+' übernommen.');
+}
+function resetTable(key){
+  TABLES[key] = JSON.parse(JSON.stringify(DEFAULT_TABLES[key]));
+  renderTableEditors();
+  savePersist();
+  renderPositions();
+}
+
+function renderCatalogOverview(){
+  const body = document.getElementById('catalogBody');
+  body.innerHTML = CATALOG.map(i=>{
+    let rahmenStr='–';
+    if (i.kind==='table'||i.kind==='tablemean2') rahmenStr = `${i.rahmen[0]}/${i.tenths||10} – ${i.rahmen[1]}/${i.tenths||10}`;
+    if (i.kind==='perEmployee') rahmenStr = `${fmtDe(i.min)}–${fmtDe(i.max)} €`;
+    return `<tr>
+      <td>${i.bez.replace(/<[^>]+>/g,'')}</td>
+      <td class="muted">${i.id}</td>
+      <td>${i.table||'–'}</td>
+      <td class="num">${rahmenStr}</td>
+      <td>${statusBadge(i.status)}</td>
+    </tr>`;
+  }).join('');
+}
+
+document.getElementById('btnApplyParams').addEventListener('click', ()=>{
+  PARAMS.zeitMin = parseFloat(document.getElementById('parZeitMin').value)||66;
+  PARAMS.zeitMax = parseFloat(document.getElementById('parZeitMax').value)||164;
+  PARAMS.mindestGW = parseFloat(document.getElementById('parMindestGW').value)||8000;
+  savePersist();
+  alert('Parameter übernommen. Wirkt sich auf neu hinzugefügte Positionen aus.');
+  renderForm();
+});
+
+/* ===================== TABS ===================== */
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+  });
+});
+
+/* ===================== THEME ===================== */
+document.getElementById('btnTheme').addEventListener('click', ()=>{
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur==='dark' ? 'light' : (cur==='light' ? '' : 'dark');
+  if (next) document.documentElement.setAttribute('data-theme', next);
+  else document.documentElement.removeAttribute('data-theme');
+  try{ localStorage.setItem('stbvv_theme', next); }catch(e){}
+});
+try{
+  const savedTheme = localStorage.getItem('stbvv_theme');
+  if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
+}catch(e){}
+
+/* ===================== PERSISTENZ ===================== */
+function savePersist(){
+  try{
+    localStorage.setItem('stbvv_state', JSON.stringify({
+      positions, TABLES, PARAMS, docType,
+      doc: {
+        kanzlei: document.getElementById('docKanzlei').value,
+        mandant: document.getElementById('docMandant').value,
+        nummer: document.getElementById('docNummer').value,
+        datum: document.getElementById('docDatum').value,
+        gueltig: document.getElementById('docGueltig').value,
+        betreff: document.getElementById('docBetreff').value,
+      },
+      totals: {
+        chkMehrfach: document.getElementById('chkMehrfach').checked,
+        pctMehrfach: document.getElementById('pctMehrfach').value,
+        chkAuslagen: document.getElementById('chkAuslagen').checked,
+        chkUst: document.getElementById('chkUst').checked,
+        ustSatz: document.getElementById('ustSatz').value,
+      }
+    }));
+  }catch(e){}
+}
+function loadPersist(){
+  try{
+    const raw = localStorage.getItem('stbvv_state');
+    if (!raw) return;
+    const s = JSON.parse(raw);
+    if (s.positions) positions = s.positions;
+    if (s.TABLES) TABLES = s.TABLES;
+    if (s.PARAMS) PARAMS = s.PARAMS;
+    if (s.docType) docType = s.docType;
+    if (s.doc){
+      document.getElementById('docKanzlei').value = s.doc.kanzlei ?? document.getElementById('docKanzlei').value;
+      document.getElementById('docMandant').value = s.doc.mandant ?? document.getElementById('docMandant').value;
+      document.getElementById('docNummer').value = s.doc.nummer ?? document.getElementById('docNummer').value;
+      document.getElementById('docDatum').value = s.doc.datum ?? document.getElementById('docDatum').value;
+      document.getElementById('docGueltig').value = s.doc.gueltig ?? document.getElementById('docGueltig').value;
+      document.getElementById('docBetreff').value = s.doc.betreff ?? document.getElementById('docBetreff').value;
+    }
+    if (s.totals){
+      document.getElementById('chkMehrfach').checked = s.totals.chkMehrfach;
+      document.getElementById('pctMehrfach').value = s.totals.pctMehrfach;
+      document.getElementById('pctMehrfach').disabled = !s.totals.chkMehrfach;
+      document.getElementById('chkAuslagen').checked = s.totals.chkAuslagen;
+      document.getElementById('chkUst').checked = s.totals.chkUst;
+      document.getElementById('ustSatz').value = s.totals.ustSatz;
+    }
+    document.querySelectorAll('[data-doctype]').forEach(b=>{
+      b.classList.toggle('active', b.dataset.doctype===docType);
+    });
+  }catch(e){}
+}
+
+document.getElementById('btnReset').addEventListener('click', ()=>{
+  if (!confirm('Wirklich alle Positionen und Einstellungen zurücksetzen?')) return;
+  try{ localStorage.removeItem('stbvv_state'); }catch(e){}
+  positions = [];
+  TABLES = JSON.parse(JSON.stringify(DEFAULT_TABLES));
+  PARAMS = { zeitMin:66, zeitMax:164, mindestGW:8000 };
+  renderTableEditors();
+  renderPositions();
+});
+
+/* ===================== INIT ===================== */
+function init(){
+  const today = new Date().toISOString().slice(0,10);
+  if (!document.getElementById('docDatum').value) document.getElementById('docDatum').value = today;
+  loadPersist();
+  renderForm();
+  renderTableEditors();
+  renderCatalogOverview();
+  renderPositions();
+}
+init();
+</script>
+</body>
+</html>
